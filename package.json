@@ -27,11 +27,18 @@
   ],
   "version": "1.0.0",
   "dependencies": {
-    "rsc.js": "/Users/cameron.dutro/workspace/rsc.js"
+    "rsc": "/Users/legrandfromage/workspace/rsc.js",
+    "glob": "~> 5.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-coffee": "^0.13.0"
+  },
   "optionalDependencies": {},
   "engines": {
     "node": "*"
+  },
+  "bin": {
+    "rsct": "bin/rsct.bin.js"
   }
 }
