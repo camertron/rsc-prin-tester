@@ -1,0 +1,37 @@
+{
+  "name": "rsc-tests",
+  "description": "Test harnesses for student-written RSC programs.",
+  "homepage": "https://github.com/camertron/rsc-tests",
+  "keywords": [
+    "teaching",
+    "emulators",
+    "rsc"
+  ],
+  "contributors": [
+    {
+      "name": "Cameron Dutro",
+      "url": "http://twitter.com/camertron",
+      "email": "camertron@gmail.com"
+    }
+  ],
+  "author": "Cameron Dutro <camertron@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/camertron/rsc-tests.git"
+  },
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "version": "1.0.0",
+  "dependencies": {
+    "rsc.js": "/Users/cameron.dutro/workspace/rsc.js"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
