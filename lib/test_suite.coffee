@@ -12,12 +12,20 @@ class TestSuite
 
   runFile: (file) ->
     program = fs.readFileSync(file, 'ascii')
-    result = Prog1.test(program)
+    results = @getTestClass(file).run(program)
 
-    if result.didSucceed()
-      console.log("Succeeded!")
-    else
-      console.log("Failed!")
-      console.log(result.message)
+    for result in results
+      if result.didSucceed()
+        console.log("Succeeded!")
+      else
+        console.log("Failed!")
+        console.log(result.message)
+
+  getTestClass: (file) ->
+    prog = @capitalize(path.basename(file, '.txt'))
+    Tests[prog]
+
+  capitalize: (str) ->
+    str[0].toUpperCase() + str.slice(1).toLowerCase()
 
 (exports ? @).TestSuite = TestSuite
