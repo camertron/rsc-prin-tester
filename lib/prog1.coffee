@@ -12,6 +12,11 @@ class Tests.Prog1
 
       Rsc.runTestCase(program, (testCase) ->
         testCase.setInputs([1.2, 7, 4.3]);
-        testCase.setOutputs([4.7]);
+        testCase.setOutputs([12.6]);
+      )
+
+      Rsc.runTestCase(program, (testCase) ->
+        testCase.setInputs([-8, 1.1, -0.4]);
+        testCase.setOutputs([-7.3]);
       )
     ]

@@ -28,7 +28,8 @@
   "version": "1.0.0",
   "dependencies": {
     "rsc": "https://github.com/camertron/rsc.js",
-    "glob": "~> 5.0"
+    "atob": "~> 1.1",
+    "colors": "~> 1.1"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

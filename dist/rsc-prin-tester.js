@@ -1,5 +1,5 @@
 (function() {
-  var Rsc, TestSuite, Tests, fs, glob, path;
+  var Rsc, TestSuite, Tests, atob, colors, fs;
 
   if (typeof Tests === "undefined" || Tests === null) {
     Tests = {};
@@ -15,7 +15,10 @@
           return testCase.setOutputs([12]);
         }), Rsc.runTestCase(program, function(testCase) {
           testCase.setInputs([1.2, 7, 4.3]);
-          return testCase.setOutputs([4.7]);
+          return testCase.setOutputs([12.6]);
+        }), Rsc.runTestCase(program, function(testCase) {
+          testCase.setInputs([-8, 1.1, -0.4]);
+          return testCase.setOutputs([-7.3]);
         })
       ];
     };
@@ -35,7 +38,13 @@
       return [
         Rsc.runTestCase(program, function(testCase) {
           testCase.setInputs([3, 4, 5]);
-          return testCase.setOutputs([4]);
+          return testCase.setOutputs([4.0]);
+        }), Rsc.runTestCase(program, function(testCase) {
+          testCase.setInputs([3.3, 1.9, 5]);
+          return testCase.setOutputs([3.4]);
+        }), Rsc.runTestCase(program, function(testCase) {
+          testCase.setInputs([3.3, -7, -5.4]);
+          return testCase.setOutputs([-3.0]);
         })
       ];
     };
@@ -44,52 +53,70 @@
 
   })();
 
-  path = require('path');
-
-  glob = require('glob');
-
   fs = require('fs');
 
   Rsc = require('rsc');
 
+  atob = require('atob');
+
+  colors = require('colors');
+
   TestSuite = (function() {
-    function TestSuite(path1) {
-      this.path = path1;
-      this.files = glob.sync(path.join(this.path, '*.txt'));
+    function TestSuite(file) {
+      this.file = file;
     }
 
     TestSuite.prototype.run = function() {
-      var file, i, len, ref, results1;
-      ref = this.files;
-      results1 = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        file = ref[i];
-        results1.push(this.runFile(file));
+      var j, len, programData, programs;
+      programs = JSON.parse(fs.readFileSync(this.file, 'ascii'));
+      for (j = 0, len = programs.length; j < len; j++) {
+        programData = programs[j];
+        this.testProgram(programData);
       }
-      return results1;
+      return console.log('');
     };
 
-    TestSuite.prototype.runFile = function(file) {
-      var i, len, program, result, results, results1;
-      program = fs.readFileSync(file, 'ascii');
-      results = this.getTestClass(file).run(program);
+    TestSuite.prototype.testProgram = function(programData) {
+      var identifier, j, len, program, result, results, results1, testClass;
+      identifier = programData[0];
+      program = this.loadProgram(programData[1]);
+      testClass = this.getTestClass(identifier);
+      if (!testClass) {
+        return;
+      }
+      results = testClass.run(program);
       results1 = [];
-      for (i = 0, len = results.length; i < len; i++) {
-        result = results[i];
+      for (j = 0, len = results.length; j < len; j++) {
+        result = results[j];
         if (result.didSucceed()) {
-          results1.push(console.log("Succeeded!"));
+          results1.push(process.stdout.write('.'));
         } else {
-          console.log("Failed!");
-          results1.push(console.log(result.message));
+          results1.push(process.stdout.write('F'.red));
         }
       }
       return results1;
     };
 
-    TestSuite.prototype.getTestClass = function(file) {
-      var prog;
-      prog = this.capitalize(path.basename(file, '.txt'));
-      return Tests[prog];
+    TestSuite.prototype.loadProgram = function(text) {
+      var i, instructions, k, program, v;
+      instructions = JSON.parse(atob(text.slice(text.indexOf('#') + 1)));
+      program = (function() {
+        var j, ref, results1;
+        results1 = [];
+        for (i = j = 0, ref = Rsc.defaultNumRows * Rsc.defaultNumColumns; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
+          results1.push('');
+        }
+        return results1;
+      })();
+      for (k in instructions) {
+        v = instructions[k];
+        program[k] = v;
+      }
+      return program.join("\n");
+    };
+
+    TestSuite.prototype.getTestClass = function(identifier) {
+      return Tests[this.capitalize(identifier)];
     };
 
     TestSuite.prototype.capitalize = function(str) {
