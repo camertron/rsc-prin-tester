@@ -27,7 +27,7 @@
   ],
   "version": "1.0.0",
   "dependencies": {
-    "rsc": "/Users/legrandfromage/workspace/rsc.js",
+    "rsc": "https://github.com/camertron/rsc.js",
     "glob": "~> 5.0"
   },
   "devDependencies": {
