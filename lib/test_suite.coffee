@@ -7,15 +7,24 @@ class TestSuite
   constructor: (@file) ->
 
   run: ->
+    allResults = []
+    failed = 0
+
     programs = JSON.parse(fs.readFileSync(@file, 'ascii'))
-    @testProgram(programData) for programData in programs
+
+    for programData in programs
+      results = @testProgram(programData)
+      allResults = allResults.concat(results)
+      failed += 1 for result in results when !result.didSucceed()
+
     console.log('')
+    console.log("#{allResults.length} examples, #{failed} failures")
 
   testProgram: (programData) ->
     identifier = programData[0]
     program = @loadProgram(programData[1])
     testClass = @getTestClass(identifier)
-    return unless testClass
+    return [] unless testClass
 
     results = testClass.run(program)
 
@@ -24,7 +33,9 @@ class TestSuite
         process.stdout.write('.')
       else
         process.stdout.write('F'.red)
-        # console.log(result.message)
+        console.log(result.message)
+
+    results
 
   loadProgram: (text) ->
     instructions = JSON.parse(atob(text.slice(text.indexOf('#') + 1)))

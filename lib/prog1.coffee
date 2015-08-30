@@ -8,12 +8,12 @@ class Tests.Prog1
       Rsc.runTestCase(program, (testCase) ->
         testCase.setInputs([3, 4, 5]);
         testCase.setOutputs([12]);
-      )
+      ),
 
       Rsc.runTestCase(program, (testCase) ->
         testCase.setInputs([1.2, 7, 4.3]);
         testCase.setOutputs([12.6]);
-      )
+      ),
 
       Rsc.runTestCase(program, (testCase) ->
         testCase.setInputs([-8, 1.1, -0.4]);
