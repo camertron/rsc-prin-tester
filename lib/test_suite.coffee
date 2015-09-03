@@ -7,35 +7,61 @@ class TestSuite
   constructor: (@file) ->
 
   run: ->
-    allResults = []
+    testResults = []
     failed = 0
 
     programs = JSON.parse(fs.readFileSync(@file, 'ascii'))
 
     for programData in programs
-      results = @testProgram(programData)
-      allResults = allResults.concat(results)
-      failed += 1 for result in results when !result.didSucceed()
+      identifier = programData[0]
+      program = @loadProgram(programData[1])
+      testResult = @testProgram(identifier, program)
+      testResults.push(testResult)
+      failed += testResult.numFailed()
 
     console.log('')
-    console.log("#{allResults.length} examples, #{failed} failures")
+    console.log('')
 
-  testProgram: (programData) ->
-    identifier = programData[0]
-    program = @loadProgram(programData[1])
+    for testResult, idx in testResults
+      testResult.eachCase (testCase) ->
+        unless testCase.didSucceed()
+          console.log("#{idx}) #{testResult.identifier}")
+          console.log("   #{testCase.message}")
+
+    console.log('')
+    console.log("#{testResults.length} examples, #{failed} failures")
+    console.log('')
+
+    grader = new Grader(testResults)
+    grades = grader.calculateGrades()
+    finalGrades = grader.calculateFinalGrades()
+
+    console.log('Grades:')
+    for identifier, grade of grades
+      console.log("#{identifier}: #{grade} points, #{grader.calculateGradePercentage(grade, Grader.MAX_POINTS_PER_PROGRAM)}%")
+
+    console.log('')
+    console.log('Final Grades:')
+    for identifier, grade of finalGrades
+      console.log("#{identifier}: #{grade} points, #{grader.calculateGradePercentage(grade, Grader.MAX_POINTS_PER_PROGRAM)}%")
+
+    console.log('')
+    finalGrade = grader.calculateFinalGrade(testResults)
+    console.log("Final grade: #{finalGrade} points, #{grader.calculateGradePercentage(finalGrade, Grader.MAX_POINTS)}%")
+
+  testProgram: (identifier, program) ->
     testClass = @getTestClass(identifier)
     return [] unless testClass
 
-    results = testClass.run(program)
+    testCases = testClass.run(program)
 
-    for result in results
-      if result.didSucceed()
+    for testCase in testCases
+      if testCase.didSucceed()
         process.stdout.write('.')
       else
         process.stdout.write('F'.red)
-        console.log(result.message)
 
-    results
+    new TestResult(identifier, program, testCases, testClass)
 
   loadProgram: (text) ->
     instructions = JSON.parse(atob(text.slice(text.indexOf('#') + 1)))

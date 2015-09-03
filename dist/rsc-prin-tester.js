@@ -1,5 +1,145 @@
 (function() {
-  var Rsc, TestSuite, Tests, atob, colors, fs;
+  var Grader, Rsc, TestResult, TestSuite, Tests, atob, colors, fs;
+
+  Grader = (function() {
+    Grader.MAX_POINTS = 50.0;
+
+    Grader.MAX_POINTS_PER_PROGRAM = 10.0;
+
+    function Grader(testResults1) {
+      this.testResults = testResults1;
+    }
+
+    Grader.prototype.calculateGrades = function() {
+      return this.selectHighestGrades(this.calculateGradesPerProgram(this.testResults));
+    };
+
+    Grader.prototype.calculateFinalGrades = function() {
+      var extra, grade, gradesPerProgram, identifier, required;
+      gradesPerProgram = this.selectHighestGrades(this.calculateGradesPerProgram(this.testResults));
+      required = this.filterByRequiredPrograms(gradesPerProgram);
+      extra = this.filterByExtraCreditPrograms(gradesPerProgram);
+      for (identifier in extra) {
+        grade = extra[identifier];
+        required[identifier] = grade;
+      }
+      return required;
+    };
+
+    Grader.prototype.calculateFinalGrade = function() {
+      var grade, grades, identifier, totalPoints;
+      totalPoints = 0;
+      grades = this.calculateFinalGrades(this.testResults);
+      for (identifier in grades) {
+        grade = grades[identifier];
+        totalPoints += grade;
+      }
+      return totalPoints;
+    };
+
+    Grader.prototype.calculateGradePercentage = function(grade, max) {
+      return Math.round((grade / max) * 1000) / 10;
+    };
+
+    Grader.prototype.filterByRequiredPrograms = function(grades) {
+      var j, len, maxId, progs, ref, required;
+      required = {
+        prog1: grades.prog1,
+        prog2: grades.prog2
+      };
+      ref = [['prog3', 'prog4'], ['prog5', 'prog6'], ['prog7', 'prog8']];
+      for (j = 0, len = ref.length; j < len; j++) {
+        progs = ref[j];
+        maxId = this.selectMaxBetween(progs[0], progs[1], grades);
+        required[maxId] = grades[maxId] != null ? grades[maxId] : 0;
+      }
+      return required;
+    };
+
+    Grader.prototype.filterByExtraCreditPrograms = function(grades) {
+      var extraCreditGrades, grade, identifier;
+      extraCreditGrades = {};
+      for (identifier in grades) {
+        grade = grades[identifier];
+        if (['prog9', 'prog10', 'prog11', 'prog12'].indexOf(identifier) > -1) {
+          extraCreditGrades[identifier] = grade;
+        }
+      }
+      return extraCreditGrades;
+    };
+
+    Grader.prototype.selectMaxBetween = function(identifier1, identifier2, grades) {
+      if (grades[identifier1] != null) {
+        if (grades[identifier2] != null) {
+          if (grades[identifier1] > grades[identifier2]) {
+            return identifier1;
+          } else {
+            return identifier2;
+          }
+        } else {
+          return identifier1;
+        }
+      } else {
+        return identifier2;
+      }
+    };
+
+    Grader.prototype.selectHighestGrades = function(grades) {
+      var gradeList, highestGrades, identifier;
+      highestGrades = {};
+      for (identifier in grades) {
+        gradeList = grades[identifier];
+        highestGrades[identifier] = Math.max.apply(null, gradeList);
+      }
+      return highestGrades;
+    };
+
+    Grader.prototype.calculateGradesPerProgram = function(testResults) {
+      var j, len, programGrades, testResult;
+      programGrades = {};
+      for (j = 0, len = testResults.length; j < len; j++) {
+        testResult = testResults[j];
+        if (programGrades[testResult.identifier] == null) {
+          programGrades[testResult.identifier] = [];
+        }
+        programGrades[testResult.identifier].push(this.calculateGradeForProgram(testResult));
+      }
+      return programGrades;
+    };
+
+    Grader.prototype.calculateGradeForProgram = function(testResult) {
+      var percentage, percentagePointsPerCase;
+      percentage = this.calculateParPercentage(testResult);
+      if (!testResult.didSucceed()) {
+        percentagePointsPerCase = percentage / testResult.testCases.length;
+        percentage -= testResult.numFailed() * percentagePointsPerCase;
+      }
+      return Grader.MAX_POINTS_PER_PROGRAM * percentage;
+    };
+
+    Grader.prototype.calculateParPercentage = function(testResult) {
+      var command, j, len, par, ref, totalCommands;
+      totalCommands = 0;
+      ref = testResult.program.split("\n");
+      for (j = 0, len = ref.length; j < len; j++) {
+        command = ref[j];
+        if (command.length > 0) {
+          totalCommands += 1;
+        }
+      }
+      par = totalCommands - testResult.testClass.tightSteps;
+      if (par <= 0) {
+        return 1;
+      } else if (par > 0 && par <= 2) {
+        return 0.899;
+      } else {
+        return 0.799;
+      }
+    };
+
+    return Grader;
+
+  })();
 
   if (typeof Tests === "undefined" || Tests === null) {
     Tests = {};
@@ -7,6 +147,8 @@
 
   Tests.Prog1 = (function() {
     function Prog1() {}
+
+    Prog1.tightSteps = 9;
 
     Prog1.run = function(program) {
       return [
@@ -34,6 +176,8 @@
   Tests.Prog10 = (function() {
     function Prog10() {}
 
+    Prog10.tightSteps = 17;
+
     Prog10.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -56,6 +200,8 @@
 
   Tests.Prog11 = (function() {
     function Prog11() {}
+
+    Prog11.tightSteps = 13;
 
     Prog11.run = function(program) {
       return [
@@ -92,6 +238,8 @@
   Tests.Prog12 = (function() {
     function Prog12() {}
 
+    Prog12.tightSteps = 21;
+
     Prog12.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -121,6 +269,8 @@
   Tests.Prog2 = (function() {
     function Prog2() {}
 
+    Prog2.tightSteps = 12;
+
     Prog2.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -146,6 +296,8 @@
 
   Tests.Prog3 = (function() {
     function Prog3() {}
+
+    Prog3.tightSteps = 16;
 
     Prog3.run = function(program) {
       return [
@@ -176,6 +328,8 @@
   Tests.Prog4 = (function() {
     function Prog4() {}
 
+    Prog4.tightSteps = 14;
+
     Prog4.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -204,6 +358,8 @@
 
   Tests.Prog5 = (function() {
     function Prog5() {}
+
+    Prog5.tightSteps = 10;
 
     Prog5.run = function(program) {
       return [
@@ -237,6 +393,8 @@
   Tests.Prog6 = (function() {
     function Prog6() {}
 
+    Prog6.tightSteps = 12;
+
     Prog6.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -269,6 +427,8 @@
   Tests.Prog7 = (function() {
     function Prog7() {}
 
+    Prog7.tightSteps = 7;
+
     Prog7.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -287,6 +447,8 @@
 
   Tests.Prog8 = (function() {
     function Prog8() {}
+
+    Prog8.tightSteps = 10;
 
     Prog8.run = function(program) {
       return [
@@ -307,6 +469,8 @@
   Tests.Prog9 = (function() {
     function Prog9() {}
 
+    Prog9.tightSteps = 12;
+
     Prog9.run = function(program) {
       return [
         Rsc.runTestCase(program, function(testCase) {
@@ -317,6 +481,52 @@
     };
 
     return Prog9;
+
+  })();
+
+  TestResult = (function() {
+    function TestResult(identifier3, program1, testCases1, testClass1) {
+      this.identifier = identifier3;
+      this.program = program1;
+      this.testCases = testCases1;
+      this.testClass = testClass1;
+    }
+
+    TestResult.prototype.numFailed = function() {
+      var failed, j, len, ref, testCase;
+      failed = 0;
+      ref = this.testCases;
+      for (j = 0, len = ref.length; j < len; j++) {
+        testCase = ref[j];
+        if (!testCase.didSucceed()) {
+          failed += 1;
+        }
+      }
+      return failed;
+    };
+
+    TestResult.prototype.didSucceed = function() {
+      var j, len, ref, testCase;
+      ref = this.testCases;
+      for (j = 0, len = ref.length; j < len; j++) {
+        testCase = ref[j];
+        if (!testCase.didSucceed()) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    TestResult.prototype.eachCase = function(callback) {
+      var j, len, ref, testCase;
+      ref = this.testCases;
+      for (j = 0, len = ref.length; j < len; j++) {
+        testCase = ref[j];
+        callback(testCase);
+      }
+    };
+
+    return TestResult;
 
   })();
 
@@ -334,56 +544,79 @@
     }
 
     TestSuite.prototype.run = function() {
-      var allResults, failed, j, l, len, len1, programData, programs, result, results;
-      allResults = [];
+      var failed, finalGrade, finalGrades, grade, grader, grades, identifier, idx, j, l, len, len1, program, programData, programs, testResult, testResults;
+      testResults = [];
       failed = 0;
       programs = JSON.parse(fs.readFileSync(this.file, 'ascii'));
       for (j = 0, len = programs.length; j < len; j++) {
         programData = programs[j];
-        results = this.testProgram(programData);
-        allResults = allResults.concat(results);
-        for (l = 0, len1 = results.length; l < len1; l++) {
-          result = results[l];
-          if (!result.didSucceed()) {
-            failed += 1;
-          }
-        }
+        identifier = programData[0];
+        program = this.loadProgram(programData[1]);
+        testResult = this.testProgram(identifier, program);
+        testResults.push(testResult);
+        failed += testResult.numFailed();
       }
       console.log('');
-      return console.log(allResults.length + " examples, " + failed + " failures");
+      console.log('');
+      for (idx = l = 0, len1 = testResults.length; l < len1; idx = ++l) {
+        testResult = testResults[idx];
+        testResult.eachCase(function(testCase) {
+          if (!testCase.didSucceed()) {
+            console.log(idx + ") " + testResult.identifier);
+            return console.log("   " + testCase.message);
+          }
+        });
+      }
+      console.log('');
+      console.log(testResults.length + " examples, " + failed + " failures");
+      console.log('');
+      grader = new Grader(testResults);
+      grades = grader.calculateGrades();
+      finalGrades = grader.calculateFinalGrades();
+      console.log('Grades:');
+      for (identifier in grades) {
+        grade = grades[identifier];
+        console.log(identifier + ": " + grade + " points, " + (grader.calculateGradePercentage(grade, Grader.MAX_POINTS_PER_PROGRAM)) + "%");
+      }
+      console.log('');
+      console.log('Final Grades:');
+      for (identifier in finalGrades) {
+        grade = finalGrades[identifier];
+        console.log(identifier + ": " + grade + " points, " + (grader.calculateGradePercentage(grade, Grader.MAX_POINTS_PER_PROGRAM)) + "%");
+      }
+      console.log('');
+      finalGrade = grader.calculateFinalGrade(testResults);
+      return console.log("Final grade: " + finalGrade + " points, " + (grader.calculateGradePercentage(finalGrade, Grader.MAX_POINTS)) + "%");
     };
 
-    TestSuite.prototype.testProgram = function(programData) {
-      var identifier, j, len, program, result, results, testClass;
-      identifier = programData[0];
-      program = this.loadProgram(programData[1]);
+    TestSuite.prototype.testProgram = function(identifier, program) {
+      var j, len, testCase, testCases, testClass;
       testClass = this.getTestClass(identifier);
       if (!testClass) {
         return [];
       }
-      results = testClass.run(program);
-      for (j = 0, len = results.length; j < len; j++) {
-        result = results[j];
-        if (result.didSucceed()) {
+      testCases = testClass.run(program);
+      for (j = 0, len = testCases.length; j < len; j++) {
+        testCase = testCases[j];
+        if (testCase.didSucceed()) {
           process.stdout.write('.');
         } else {
           process.stdout.write('F'.red);
-          console.log(result.message);
         }
       }
-      return results;
+      return new TestResult(identifier, program, testCases, testClass);
     };
 
     TestSuite.prototype.loadProgram = function(text) {
       var i, instructions, k, program, v;
       instructions = JSON.parse(atob(text.slice(text.indexOf('#') + 1)));
       program = (function() {
-        var j, ref, results1;
-        results1 = [];
+        var j, ref, results;
+        results = [];
         for (i = j = 0, ref = Rsc.defaultNumRows * Rsc.defaultNumColumns; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-          results1.push('');
+          results.push('');
         }
-        return results1;
+        return results;
       })();
       for (k in instructions) {
         v = instructions[k];

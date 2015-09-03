@@ -3,6 +3,8 @@
 Tests = {} unless Tests?
 
 class Tests.Prog4
+  @tightSteps = 14
+
   @run = (program) ->
     [
       Rsc.runTestCase(program, (testCase) ->
